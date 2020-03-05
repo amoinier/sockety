@@ -1,5 +1,4 @@
 import express from 'express'
-import dotenv from 'dotenv'
 import cors from 'cors'
 import favicon from 'serve-favicon'
 import path from 'path'
@@ -7,15 +6,11 @@ import bodyParser from 'body-parser'
 
 import sockety from './sockety'
 
-// import api from './api'
-
 const app = express()
-
-dotenv.config()
 
 app.use(bodyParser.json({ limit: '1mb' }))
 app.use(cors())
-app.use(favicon(path.join('./', 'public', 'favicon.png')))
+app.use(favicon(path.join(__dirname, 'public', 'favicon.png')))
 
 app.use('/sockety', sockety)
 

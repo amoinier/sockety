@@ -24,11 +24,15 @@ wss.on('connection', (ws) => {
   globalWs.send('something')
 })
 
-Router.post('/', (req: express.Request, res: express.Response): void => {
+Router.post('/', (req: express.Request, res: express.Response): express.Response<any> => {
   const request: WebsocketRequest = req.body
 
-  request.header = Buffer.alloc(request.header.length, request.header, 'base64').toString('ascii')
-  request.body = Buffer.alloc(request.body.length, request.body, 'base64').toString('ascii')
+  if (!request.url || !request.method || !globalWs) {
+    return res.sendStatus(500).json()
+  }
+
+  // request.header = Buffer.alloc(request.header.length, request.header, 'base64').toString('ascii')
+  // request.body = Buffer.alloc(request.body.length, request.body, 'base64').toString('ascii')
 
   let stringifyRequest: string = ''
   try {
@@ -41,7 +45,7 @@ Router.post('/', (req: express.Request, res: express.Response): void => {
 
   globalWs.send(encodedRequest)
 
-  res.sendStatus(200).json()
+  return res.sendStatus(200).json()
 })
 
 export default Router
