@@ -8,7 +8,7 @@
     "prestart": "npm run build",
     "dev:start": "npm start",
     "dev": "nodemon -w src -e ts --exec npm run dev:start",
-    "start": "HTTP_PORT=3000 WEBSOCKET_PORT=8000 node .",
+    "start": "SERVER_IP=localhost SERVER_PORT=8000 node .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/amoinier/sockety#readme",
   "devDependencies": {
+    "@types/axios": "^0.14.0",
     "@types/cors": "^2.8.6",
     "@types/express": "^4.17.3",
     "@types/serve-favicon": "^2.5.0",
