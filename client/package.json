@@ -8,7 +8,7 @@
     "prestart": "npm run build",
     "dev:start": "npm start",
     "dev": "nodemon -w src -e ts --exec npm run dev:start",
-    "start": "SERVER_IP=localhost SERVER_PORT=8000 node .",
+    "start": "node .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -37,13 +37,16 @@
   },
   "dependencies": {
     "@types/node": "^13.7.7",
+    "@types/uuid": "^7.0.0",
     "@types/ws": "^7.2.2",
     "axios": "^0.19.2",
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
+    "nodemon": "^2.0.2",
     "serve-favicon": "^2.5.0",
     "typescript": "^3.8.3",
+    "uuid": "^7.0.2",
     "ws": "^7.2.1"
   }
 }

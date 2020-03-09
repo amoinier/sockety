@@ -20,6 +20,11 @@ interface WebsocketReturnRequest {
 interface WebsocketClient {
   ws: WebSocket
   req: any
+  token: string
+}
+
+interface TokenObject {
+  token: string
 }
 
 let client: WebsocketClient
@@ -27,33 +32,45 @@ let client: WebsocketClient
 wss.on('connection', (ws: WebSocket, req) => {
   client = {
     ws: ws,
-    req: req
+    req: req,
+    token: ''
   }
 
   client.ws.on('message', (message) => {
-    let result: WebsocketReturnRequest | null
+    let result: TokenObject | WebsocketReturnRequest | null
 
     try {
       const str = Buffer.from(message.toString('base64'), 'base64').toString()
       result = JSON.parse(str)
-      if (result !== null && result.data) {
-        result.data = JSON.parse(result.data as string)
+      if (result === null) {
+        client.ws.terminate()
+      } else if ((result as TokenObject).token) {
+        client.token = (result as TokenObject).token
+      } else {
       }
     } catch (e) {
       result = null
       console.log(e)
     }
   })
-
-  client.ws.send('something')
 })
 
 Router.post('/', (req: express.Request, res: express.Response): express.Response<any> | null => {
   const request: WebsocketRequest = req.body
+  const { token } = req.query
 
   if (!request.url || !request.method || !client || !client.ws) {
     console.log('empty parameter')
-    return res.status(500).json()
+    return res.status(500).json({
+      message: 'empty parameter'
+    })
+  }
+
+  if (token !== client.token) {
+    console.log('bad token')
+    return res.status(500).json({
+      message: 'invalid token'
+    })
   }
 
   let stringifyHeader: string = ''
