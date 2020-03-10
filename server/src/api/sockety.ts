@@ -3,10 +3,8 @@ import WebSocket from 'ws'
 
 const Router = express.Router()
 
-const wss = new WebSocket.Server({ port: parseInt(process.env.WEBSOCKET_PORT || '80') })
-
 interface WebsocketRequest {
-  method: 'get' | 'GET' | 'delete' | 'DELETE' | 'head' | 'HEAD' | 'options' | 'OPTIONS' | 'post' | 'POST' | 'put' | 'PUT' | 'patch' | 'PATCH' | 'link' | 'LINK' | 'unlink' | 'UNLINK' | undefined
+  method: 'get' | 'GET' | 'delete' | 'DELETE' | 'head' | 'HEAD' | 'options' | 'OPTIONS' | 'post' | 'POST' | 'put' | 'PUT' | 'patch' | 'PATCH'
   url: string
   headers: object
   body: object
@@ -27,6 +25,7 @@ interface TokenObject {
   token: string
 }
 
+const wss = new WebSocket.Server({ port: parseInt(process.env.WEBSOCKET_PORT || '8000') })
 let client: WebsocketClient
 
 wss.on('connection', (ws: WebSocket, req) => {
@@ -37,20 +36,14 @@ wss.on('connection', (ws: WebSocket, req) => {
   }
 
   client.ws.on('message', (message) => {
-    let result: TokenObject | WebsocketReturnRequest | null
+    const result: TokenObject | WebsocketReturnRequest | null = decodeString(message)
 
-    try {
-      const str = Buffer.from(message.toString('base64'), 'base64').toString()
-      result = JSON.parse(str)
-      if (result === null) {
-        client.ws.terminate()
-      } else if ((result as TokenObject).token) {
-        client.token = (result as TokenObject).token
-      } else {
-      }
-    } catch (e) {
-      result = null
-      console.log(e)
+    if ((result as TokenObject).token) {
+      client.token = (result as TokenObject).token
+    } else if ((result as WebsocketReturnRequest).data) {
+      console.log((result as WebsocketReturnRequest).data)
+    } else {
+      return client.ws.terminate()
     }
   })
 })
@@ -105,5 +98,18 @@ Router.post('/', (req: express.Request, res: express.Response): express.Response
 
   return null
 })
+
+const decodeString = (message: string | WebSocket.Data): any => {
+  if (!message) {
+    return null
+  }
+
+  try {
+    return JSON.parse(Buffer.from(message.toString('base64'), 'base64').toString())
+  } catch (e) {
+    console.error(e)
+    return null
+  }
+}
 
 export default Router

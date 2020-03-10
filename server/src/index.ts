@@ -1,23 +1,17 @@
 import express from 'express'
-import cors from 'cors'
-import favicon from 'serve-favicon'
-import path from 'path'
-import bodyParser from 'body-parser'
 
-import sockety from './sockety'
+import loaders from './loaders'
 
-const app = express()
+const startServer = async () => {
+  const app = express()
 
-app.use(bodyParser.json({ limit: '1mb' }))
-app.use(cors())
-app.use(favicon(path.join(__dirname, 'public', 'favicon.png')))
+  loaders({ expressApp: app })
 
-app.use('/sockety', sockety)
+  console.log(process.env.HTTP_PORT)
 
-app.use((_: express.Request, res: express.Response): void => {
-  res.status(404).send('not found')
-})
+  app.listen(process.env.HTTP_PORT || 3000, (): void => {
+    console.log(`listening on ${process.env.HTTP_PORT || 3000}`)
+  })
+}
 
-app.listen(process.env.HTTP_PORT || 3000, (): void => {
-  console.log(`listening on ${process.env.HTTP_PORT || 3000}`)
-})
+startServer()

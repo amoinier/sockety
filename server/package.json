@@ -4,7 +4,7 @@
   "description": "A websocket client/server to access your personal network from outdoor",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp -r ./public dist/",
     "prestart": "npm run build",
     "dev:start": "npm start",
     "dev": "nodemon -w src -e ts --exec npm run dev:start",
