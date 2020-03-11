@@ -5,11 +5,10 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc && cp -r ./public dist/",
-    "prestart": "npm run build",
     "dev:start": "npm start",
-    "dev": "nodemon -w src -e ts --exec npm run dev:start",
+    "dev": "npm run build && nodemon -w src -e ts --exec npm run dev:start",
     "start": "node .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -22,28 +21,24 @@
   },
   "homepage": "https://github.com/amoinier/sockety#readme",
   "devDependencies": {
-    "@types/cors": "^2.8.6",
-    "@types/express": "^4.17.3",
-    "@types/serve-favicon": "^2.5.0",
-    "@typescript-eslint/eslint-plugin": "^2.22.0",
-    "@typescript-eslint/parser": "^2.22.0",
-    "eslint": "^6.8.0",
-    "eslint-config-standard": "^14.1.0",
-    "eslint-plugin-import": "^2.20.1",
-    "eslint-plugin-node": "^11.0.0",
-    "eslint-plugin-promise": "^4.2.1",
-    "eslint-plugin-standard": "^4.0.1"
-  },
-  "dependencies": {
+    "@types/hapi__joi": "^16.0.12",
     "@types/node": "^13.7.7",
     "@types/ws": "^7.2.2",
-    "axios": "^0.19.2",
-    "cors": "^2.8.5",
-    "dotenv": "^8.2.0",
-    "express": "^4.17.1",
+    "@types/cors": "^2.8.6",
+    "@types/express": "^4.17.3",
+    "@types/jest": "^25.1.4",
+    "@types/serve-favicon": "^2.5.0",
+    "jest": "^25.1.0",
     "nodemon": "^2.0.2",
-    "serve-favicon": "^2.5.0",
     "typescript": "^3.8.3",
+    "ts-jest": "^25.2.1"
+  },
+  "dependencies": {
+    "axios": "^0.19.2",
+    "celebrate": "^12.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "serve-favicon": "^2.5.0",
     "ws": "^7.2.1"
   }
 }

@@ -18,10 +18,10 @@ interface TokenObject {
   token: string
 }
 
-const connectWebsocket = ():void => {
-  const ws = new WebSocket(`ws://${process.env.SERVER_IP}:${process.env.SERVER_PORT}`)
+const token = process.env.WEBSOCKET_TOKEN || uuidv4().toString()
 
-  const token = process.env.WEBSOCKET_TOKEN || uuidv4().toString()
+const connectWebsocket = ():void => {
+  const ws = new WebSocket(`ws://${process.env.SERVER_IP}:${process.env.SERVER_PORT || 8000}`)
 
   ws.on('open', () => {
     sendReturnData(ws, {
@@ -96,11 +96,10 @@ const sendReturnData = (ws: WebSocket, returnData: WebsocketReturnRequest | Toke
   try {
     stringifyReturnData = JSON.stringify(returnData)
   } catch (err) {
-    console.log(err)
+    return console.error(err)
   }
 
   const encodedreturnData: string = Buffer.alloc(stringifyReturnData.length, stringifyReturnData).toString('base64')
-
   ws.send(encodedreturnData)
 }
 

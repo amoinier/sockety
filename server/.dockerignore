@@ -4,3 +4,5 @@ mongo
 docker-compose.yml
 .travis.yml
 .eslintrc.json
+tests/
+jest.config.js

@@ -3,6 +3,7 @@ import cors from 'cors'
 import favicon from 'serve-favicon'
 import path from 'path'
 import bodyParser from 'body-parser'
+import { errors } from 'celebrate'
 
 import sockety from '../api/sockety'
 
@@ -13,8 +14,12 @@ export default async ({ app }: { app: express.Application }) => {
 
   app.use('/sockety', sockety)
 
+  app.use(errors())
+
   app.use((_: express.Request, res: express.Response): void => {
-    res.status(404).send('not found')
+    res.status(404).json({
+      message: 'not found'
+    })
   })
 
   return app
