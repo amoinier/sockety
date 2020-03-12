@@ -12,15 +12,13 @@ One app in your personnal network (client), one app where you want (server).
 It create a websocket server to send HTTP request at the client.
 
 ### Build/Install
-
-#### Raw
 Go in **server/** folder
 ```
 cd server/
 ```
 
-Install npm package
-
+#### Development
+Install npm packages
 ```
 npm install
 ```
@@ -30,12 +28,18 @@ Run in development mode
 npm run dev
 ```
 
-#### Docker
-Go in **server/** folder
+### Production
+Install npm packages (production only)
 ```
-cd server/
+npm install
 ```
 
+Run in production mode
+```
+npm start
+```
+
+#### Docker
 Build docker image
 ```
 docker build -t sockety_server .
@@ -52,14 +56,13 @@ docker run -p3000:3000 -p8000:8000 -e HTTP_PORT=3000 -e WEBSOCKET_PORT=8000 sock
 It connect to the server in websocket and send request with server datas received.
 
 ### Build/Install
-
-#### Raw
 Go in **client/** folder
 ```
 cd client/
 ```
 
-Install npm package
+#### Development
+Install npm packages
 
 ```
 npm install
@@ -70,12 +73,18 @@ Run in development mode
 npm run dev
 ``` 
 
-#### Docker
-Go in **client/** folder
+### Production
+Install npm packages (production only)
 ```
-cd client/
+npm install
 ```
 
+Run in production mode
+```
+npm start
+```
+
+#### Docker
 Build docker image
 ```
 docker build -t sockety_client .

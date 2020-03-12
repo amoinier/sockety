@@ -91,10 +91,8 @@ Router.post('/', celebrate({
   }),
   [Segments.HEADERS]: Joi.object().keys({
     host: Joi.string(),
-    authorization: Joi.string(),
-    'content-type': Joi.string(),
-    'content-length': Joi.number()
-  })
+    authorization: Joi.string()
+  }).unknown()
 }), (req: express.Request, res: express.Response): express.Response<any> | null => {
   const request: WebsocketRequest = req.body
   const client = getClientByToken(clients, req.query.token) || getClientByToken(clients, (req.headers.authorization as string).replace(/^Bearer /gm, ''))
