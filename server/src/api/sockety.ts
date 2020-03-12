@@ -87,12 +87,17 @@ Router.post('/', celebrate({
     body: Joi.object()
   }),
   [Segments.QUERY]: Joi.object().keys({
-    token: Joi.string().required()
+    token: Joi.string()
+  }),
+  [Segments.HEADERS]: Joi.object().keys({
+    host: Joi.string(),
+    authorization: Joi.string(),
+    'content-type': Joi.string(),
+    'content-length': Joi.number()
   })
 }), (req: express.Request, res: express.Response): express.Response<any> | null => {
   const request: WebsocketRequest = req.body
-  const { token }:({ token: string}) = req.query
-  const client = getClientByToken(clients, token)
+  const client = getClientByToken(clients, req.query.token) || getClientByToken(clients, (req.headers.authorization as string).replace(/^Bearer /gm, ''))
 
   if (!client || !client.ws) {
     return res.status(400).json({
@@ -154,7 +159,7 @@ const waitResponse = (client: WebsocketClient) => {
 
       clearInterval(interval)
       return resolve(client.message)
-    }, 100)
+    }, 10)
   })
 }
 

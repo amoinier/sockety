@@ -5,8 +5,8 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc && cp -r ./public dist/",
-    "dev:start": "npm start",
-    "dev": "npm run build && nodemon -w src -e ts --exec npm run dev:start",
+    "dev:start": "npm run build && npm start",
+    "dev": "nodemon -w src -e ts --exec npm run dev:start",
     "start": "node .",
     "test": "jest"
   },
