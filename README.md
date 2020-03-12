@@ -8,6 +8,37 @@ One app in your personnal network (client), one app where you want (server).
 * Return HTTP response from client if it respond under 1 sec.
 * Ping client every 30 sec.
 
+## Usage
+When your server and client is ready and client is connected to server, you just need to do a POST request on server:
+`<SERVER_IP>:<SERVER_PORT>/sockety?token=<WEBSOCKET_TOKEN>`.
+
+(You can set the token in headers params instead of query params, in **Authorization** like: `Bearer <WEBSOCKET_TOKEN>`. If you set your token both in headers params and query params, Sockety check both if it matches with a client to validate connection).
+
+
+The body define request informations for the request sending by client:
+> url (string): Every url you want.
+
+> method (string): 'get' | 'GET' | 'delete' | 'DELETE' | 'head' | 'HEAD' | 'options' | 'OPTIONS' | 'post' | 'POST' | 'put' | 'PUT' | 'patch' | 'PATCH'.
+
+> headers (JSON): All HTTP headers you want.
+
+> body (JSON): Everything you want.
+
+```
+{
+	"url": "https://example.com",
+	"method": "GET",
+	"headers": {
+		"authorization": "Bearer XXXX",
+		...
+	},
+	"body": {
+		"login": "amoinier",
+		...
+	}
+}
+```
+
 ## Server
 It create a websocket server to send HTTP request at the client.
 
@@ -98,33 +129,4 @@ Start docker image (need 3 env variables: SERVER_IP, SERVER_PORT, WEBSOCKET_TOKE
 > WEBSOCKET_TOKEN (optional): Define a token to "secure" your request. It's optional, without WEBSOCKET_TOKEN, client create one and display it in logs.
 ```
 docker run -e SERVER_IP=localhost -e SERVER_PORT=8000 -e WEBSOCKET_TOKEN=qwertyuiop sockety_client
-```
-
-## Usage
-When your server and client is ready and client is connected to server, you just need to POST request on server:
-`<SERVER_IP>:<SERVER_PORT>/sockety?token=<WEBSOCKET_TOKEN>`.
-(You can set the token in headers instead of query, in **Authorization** like: `Bearer <WEBSOCKET_TOKEN>`. If you set your token in headers and query, Sockety check both if it matches with a client).
-
-The body define request informations:
-> url (string): Every url you want.
-
-> method (string): 'get' | 'GET' | 'delete' | 'DELETE' | 'head' | 'HEAD' | 'options' | 'OPTIONS' | 'post' | 'POST' | 'put' | 'PUT' | 'patch' | 'PATCH'.
-
-> headers (JSON): All HTTP headers.
-
-> body (JSON): Everything you want.
-
-```
-{
-	"url": "https://example.com",
-	"method": "GET",
-	"headers": {
-		"authorization": "Bearer XXXX",
-		...
-	},
-	"body": {
-		"login": "amoinier",
-		...
-	}
-}
 ```

@@ -1,5 +1,6 @@
 import WebSocket from 'ws'
 import axios from 'axios'
+import 'source-map-support/register'
 import { v4 as uuidv4 } from 'uuid'
 
 interface WebsocketRequest {
