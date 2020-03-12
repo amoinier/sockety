@@ -65,6 +65,11 @@ Install npm packages (production only)
 npm install
 ```
 
+Build app
+```
+npm run build
+```
+
 Run in production mode
 ```
 npm start
@@ -108,6 +113,11 @@ npm run dev
 Install npm packages (production only)
 ```
 npm install
+```
+
+Build app
+```
+npm run build
 ```
 
 Run in production mode
