@@ -103,10 +103,8 @@ docker run -e SERVER_IP=localhost -e SERVER_PORT=8000 -e WEBSOCKET_TOKEN=qwertyu
 ## Usage
 When your server and client is ready and client is connected to server, you just need to POST request on server:
 `<SERVER_IP>:<SERVER_PORT>/sockety?token=<WEBSOCKET_TOKEN>`.
+(You can set the token in headers instead of query, in **Authorization** like: `Bearer <WEBSOCKET_TOKEN>`. If you set your token in headers and query, Sockety check both if it matches with a client).
 
-You can set the token in headers instead of query, in **Authorization** like: `Bearer <WEBSOCKET_TOKEN>`.
-
-(if you set your token in headers and query, Sockety check both if it matches with a client).
 The body define request informations:
 > url (string): Every url you want.
 
