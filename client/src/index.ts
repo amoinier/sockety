@@ -18,9 +18,13 @@ interface TokenObject {
   token: string
 }
 
-const token = process.env.WEBSOCKET_TOKEN || uuidv4().toString()
-
 const connectWebsocket = ():void => {
+  if (!process.env.SERVER_IP) {
+    console.error(new Error('No SERVER_IP set'))
+    return
+  }
+
+  const token = process.env.WEBSOCKET_TOKEN || uuidv4().toString()
   const ws = new WebSocket(`ws://${process.env.SERVER_IP}:${process.env.SERVER_PORT || 8000}`)
 
   ws.on('open', () => {
