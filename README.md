@@ -59,10 +59,15 @@ Run in development mode
 npm run dev
 ```
 
-### Production
+#### Production
 Install npm packages (production only)
 ```
 npm install
+```
+
+Build app
+```
+npm run build
 ```
 
 Run in production mode
@@ -104,10 +109,15 @@ Run in development mode
 npm run dev
 ``` 
 
-### Production
+#### Production
 Install npm packages (production only)
 ```
 npm install
+```
+
+Build app
+```
+npm run build
 ```
 
 Run in production mode
