@@ -12,9 +12,6 @@ One app in your personnal network (client), one app where you want (server).
 When your server and client is ready and client is connected to server, you just need to do a POST request on server:
 `<SERVER_IP>:<SERVER_PORT>/sockety?client_id=<WEBSOCKET_CLIENTID>`.
 
-(You can set the client ID in headers params instead of query params, in **Authorization** like: `Bearer <WEBSOCKET_CLIENTID>`. If you set your client ID both in headers params and query params, Sockety check both if it matches with a client to validate connection).
-
-
 The body define request informations for the request sending by client:
 > url (string): Every url you want.
 
