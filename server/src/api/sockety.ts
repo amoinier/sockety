@@ -19,14 +19,14 @@ interface WebsocketReturnRequest {
 interface WebsocketClient {
   ws: WebSocket
   req: any
-  token: string
+  clientID: string
   isAlive: boolean
   interval?: NodeJS.Timeout
   message?: WebsocketReturnRequest | undefined
 }
 
-interface TokenObject {
-  token: string
+interface ClientIDObject {
+  clientID: string
 }
 
 const wss = new WebSocket.Server({ port: parseInt(process.env.WEBSOCKET_PORT || '8000') })
@@ -36,21 +36,21 @@ wss.on('connection', (ws: WebSocket, req) => {
   const client: WebsocketClient = {
     ws: ws,
     req: req,
-    token: '',
+    clientID: '',
     isAlive: true
   }
 
   client.ws.on('message', (message) => {
-    const result: TokenObject | WebsocketReturnRequest | null = decodeString(message)
+    const result: ClientIDObject | WebsocketReturnRequest | null = decodeString(message)
 
-    if (!result || ((!(result as TokenObject).token || getClientByToken(clients, (result as TokenObject).token)) && !(result as WebsocketReturnRequest).data)) {
+    if (!result || ((!(result as ClientIDObject).clientID || getClientByClientID(clients, (result as ClientIDObject).clientID)) && !(result as WebsocketReturnRequest).data)) {
       return ws.terminate()
     }
     if ((result as WebsocketReturnRequest).data) {
       client.message = (result as WebsocketReturnRequest)
       return
     }
-    client.token = (result as TokenObject).token
+    client.clientID = (result as ClientIDObject).clientID
     clients.push(client)
 
     client.interval = setInterval(() => {
@@ -74,7 +74,7 @@ wss.on('connection', (ws: WebSocket, req) => {
         clearInterval(client.interval)
       }
       deleteWebsocketClient(clients, client)
-      console.log(`Connexion websocket from ${client.token} has been closed`)
+      console.log(`Connexion websocket from ${client.clientID} has been closed`)
     })
   })
 })
@@ -87,19 +87,15 @@ Router.post('/', celebrate({
     body: Joi.object()
   }),
   [Segments.QUERY]: Joi.object().keys({
-    token: Joi.string()
-  }),
-  [Segments.HEADERS]: Joi.object().keys({
-    host: Joi.string(),
-    authorization: Joi.string()
-  }).unknown()
+    client_id: Joi.string()
+  })
 }), (req: express.Request, res: express.Response): express.Response<any> | null => {
   const request: WebsocketRequest = req.body
-  const client = getClientByToken(clients, req.query.token) || getClientByToken(clients, (req.headers.authorization as string).replace(/^Bearer /gm, ''))
+  const client = getClientByClientID(clients, req.query.client_id)
 
   if (!client || !client.ws) {
     return res.status(400).json({
-      message: 'client not connected or invalid token'
+      message: 'client not connected or invalid client ID'
     })
   }
 
@@ -124,17 +120,19 @@ Router.post('/', celebrate({
       return res.status(500).json({ error: err })
     }
 
+    const remoteAddress: string = client.req.connection.remoteAddress.replace(/::ffff:/gm, '')
+
     const message = await waitResponse(client).catch((err) => {
       console.error(err)
       return res.status(200).json({
-        message: 'data sent to ' + client.req.connection.remoteAddress
+        message: `data sent to ${remoteAddress}`
       })
     })
 
     if (message) {
       client.message = undefined
       return res.status(200).json({
-        message: 'data sent to ' + client.req.connection.remoteAddress,
+        message: `data sent to ${remoteAddress}`,
         request: message
       })
     }
@@ -162,18 +160,18 @@ const waitResponse = (client: WebsocketClient) => {
 }
 
 const deleteWebsocketClient = (clients: WebsocketClient[], toDelete: WebsocketClient): void => {
-  const index: number = clients.findIndex((client: WebsocketClient) => client.token === toDelete.token)
+  const index: number = clients.findIndex((client: WebsocketClient) => client.clientID === toDelete.clientID)
   if (index === -1) {
     return
   }
   clients.splice(index, 1)
 }
 
-const getClientByToken = (clients: WebsocketClient[], token: string): WebsocketClient | undefined => {
-  return clients.find(client => client.token === token)
+const getClientByClientID = (clients: WebsocketClient[], clientID: string): WebsocketClient | undefined => {
+  return clients.find(client => client.clientID === clientID)
 }
 
-const decodeString = (message: string | WebSocket.Data): TokenObject | WebsocketReturnRequest | null => {
+const decodeString = (message: string | WebSocket.Data): ClientIDObject | WebsocketReturnRequest | null => {
   if (!message) {
     return null
   }

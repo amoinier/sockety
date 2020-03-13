@@ -4,15 +4,15 @@ If you want to do HTTP request in your personal network from outside without ope
 One app in your personnal network (client), one app where you want (server).
 
 ## Features
-* Multiple client split by token.
+* Multiple client split by client ID.
 * Return HTTP response from client if it respond under 1 sec.
 * Ping client every 30 sec.
 
 ## Usage
 When your server and client is ready and client is connected to server, you just need to do a POST request on server:
-`<SERVER_IP>:<SERVER_PORT>/sockety?token=<WEBSOCKET_TOKEN>`.
+`<SERVER_IP>:<SERVER_PORT>/sockety?client_id=<WEBSOCKET_CLIENTID>`.
 
-(You can set the token in headers params instead of query params, in **Authorization** like: `Bearer <WEBSOCKET_TOKEN>`. If you set your token both in headers params and query params, Sockety check both if it matches with a client to validate connection).
+(You can set the client ID in headers params instead of query params, in **Authorization** like: `Bearer <WEBSOCKET_CLIENTID>`. If you set your client ID both in headers params and query params, Sockety check both if it matches with a client to validate connection).
 
 
 The body define request informations for the request sending by client:
@@ -121,12 +121,12 @@ Build docker image
 docker build -t sockety_client .
 ```
 
-Start docker image (need 3 env variables: SERVER_IP, SERVER_PORT, WEBSOCKET_TOKEN)
+Start docker image (need 3 env variables: SERVER_IP, SERVER_PORT, WEBSOCKET_CLIENTID)
 > SERVER_IP: Serveur IP/address.
 
 > SERVER_PORT: Websocket port define in server startup.
 
-> WEBSOCKET_TOKEN (optional): Define a token to "secure" your request. It's optional, without WEBSOCKET_TOKEN, client create one and display it in logs.
+> WEBSOCKET_CLIENTID (optional): Define a client ID to "secure" your request. It's optional, without WEBSOCKET_CLIENTID, client create one and display it in logs.
 ```
-docker run -e SERVER_IP=localhost -e SERVER_PORT=8000 -e WEBSOCKET_TOKEN=qwertyuiop sockety_client
+docker run -e SERVER_IP=localhost -e SERVER_PORT=8000 -e WEBSOCKET_CLIENTID=qwertyuiop sockety_client
 ```

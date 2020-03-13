@@ -15,8 +15,8 @@ interface WebsocketReturnRequest {
   data: object
 }
 
-interface TokenObject {
-  token: string
+interface ClientIDObject {
+  clientID: string
 }
 
 const connectWebsocket = ():void => {
@@ -25,14 +25,14 @@ const connectWebsocket = ():void => {
     return
   }
 
-  const token = process.env.WEBSOCKET_TOKEN || uuidv4().toString()
+  const clientID = process.env.WEBSOCKET_CLIENTID || uuidv4().toString()
   const ws = new WebSocket(`ws://${process.env.SERVER_IP}:${process.env.SERVER_PORT || 8000}`)
 
   ws.on('open', () => {
     sendReturnData(ws, {
-      token: token
+      clientID: clientID
     })
-    console.log(`websocket connected! Use ${token} as query param (ex: ?token=${token})`)
+    console.log(`websocket connected! Use ${clientID} as query param (ex: ?client_id=${clientID})`)
   })
 
   ws.on('error', (err) => {
@@ -96,7 +96,7 @@ const connectWebsocket = ():void => {
   })
 }
 
-const sendReturnData = (ws: WebSocket, returnData: WebsocketReturnRequest | TokenObject): void => {
+const sendReturnData = (ws: WebSocket, returnData: WebsocketReturnRequest | ClientIDObject): void => {
   let stringifyReturnData: string = ''
   try {
     stringifyReturnData = JSON.stringify(returnData)
