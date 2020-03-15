@@ -89,7 +89,7 @@ Router.post('/', celebrate({
   [Segments.QUERY]: Joi.object().keys({
     client_id: Joi.string()
   })
-}), (req: express.Request, res: express.Response): express.Response<any> | null => {
+}), (req: express.Request, res: express.Response, next: express.NextFunction): express.Response<any> | null => {
   const request: WebsocketRequest = req.body
   const client = getClientByClientID(clients, req.query.client_id)
 
@@ -124,7 +124,7 @@ Router.post('/', celebrate({
 
     const message = await waitResponse(client).catch((err) => {
       console.error(err)
-      return res.status(200).json({
+      res.status(200).json({
         message: `data sent to ${remoteAddress}`
       })
     })
@@ -145,7 +145,8 @@ const waitResponse = (client: WebsocketClient) => {
   return new Promise<WebsocketReturnRequest | null>((resolve, reject) => {
     const time = Date.now()
     const interval = setInterval(() => {
-      if (time - Date.now() >= 1000) {
+      console.log(time - Date.now())
+      if (Date.now() - time >= 1000) {
         clearInterval(interval)
         return reject(new Error('Reponse timeout'))
       }

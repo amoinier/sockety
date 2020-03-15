@@ -80,8 +80,8 @@ const connectWebsocket = ():void => {
 
     if (result) {
       const returnData: WebsocketReturnRequest = {
-        status: result.status,
-        data: result.data
+        status: result?.status,
+        data: result?.data
       }
 
       return sendReturnData(ws, returnData)
