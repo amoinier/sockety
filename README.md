@@ -13,6 +13,8 @@ When your server and client is ready and client is connected to server, you just
 `<SERVER_IP>:<SERVER_PORT>/sockety?client_id=<WEBSOCKET_CLIENTID>`.
 
 The body define request informations for the request sending by client:
+> client_id (string): If you want to set client_id in body, you can with this parameters.
+
 > url (string): Every url you want.
 
 > method (string): 'get' | 'GET' | 'delete' | 'DELETE' | 'head' | 'HEAD' | 'options' | 'OPTIONS' | 'post' | 'POST' | 'put' | 'PUT' | 'patch' | 'PATCH'.

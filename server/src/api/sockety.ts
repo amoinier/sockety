@@ -41,46 +41,47 @@ wss.on('connection', (ws: WebSocket, req) => {
   }
 
   client.ws.on('message', (message) => {
-    const result: ClientIDObject | WebsocketReturnRequest | null = decodeString(message)
+    const wsMessage: ClientIDObject | WebsocketReturnRequest | null = decodeString(message)
 
-    if (!result || ((!(result as ClientIDObject).clientID || getClientByClientID(clients, (result as ClientIDObject).clientID)) && !(result as WebsocketReturnRequest).data)) {
+    if (!wsMessage) {
+      console.error('wsMessage is null')
       return ws.terminate()
     }
-    if ((result as WebsocketReturnRequest).data) {
-      client.message = (result as WebsocketReturnRequest)
-      return
-    }
-    client.clientID = (result as ClientIDObject).clientID
-    clients.push(client)
+    if ((wsMessage as ClientIDObject).clientID) {
+      client.clientID = (wsMessage as ClientIDObject).clientID
+      clients.push(client)
 
-    client.interval = setInterval(() => {
-      if (client.isAlive === false) {
-        return client.ws.terminate()
-      }
+      client.interval = setInterval(() => {
+        if (client.isAlive === false) {
+          return client.ws.terminate()
+        }
 
-      client.isAlive = false
-      client.ws.ping(() => {
-        console.log('ping')
+        client.isAlive = false
+        client.ws.ping(() => {
+          console.log('ping')
+        })
+      }, 30000)
+
+      client.ws.on('pong', () => {
+        client.isAlive = true
       })
-    }, 30000)
 
-    client.ws.on('pong', () => {
-      client.isAlive = true
-    })
-
-    client.ws.on('close', () => {
-      client.isAlive = false
-      if (client.interval) {
-        clearInterval(client.interval)
-      }
-      deleteWebsocketClient(clients, client)
-      console.log(`Connexion websocket from ${client.clientID} has been closed`)
-    })
+      client.ws.on('close', () => {
+        client.isAlive = false
+        if (client.interval) {
+          clearInterval(client.interval)
+        }
+        deleteWebsocketClient(clients, client)
+        console.log(`Connexion websocket from ${client.clientID} has been closed`)
+      })
+    }
+    client.message = (wsMessage as WebsocketReturnRequest)
   })
 })
 
 Router.post('/', celebrate({
   [Segments.BODY]: Joi.object().keys({
+    client_id: Joi.string().allow(''),
     url: Joi.string().uri().required(),
     method: Joi.string().required(),
     headers: Joi.object(),
@@ -91,7 +92,7 @@ Router.post('/', celebrate({
   })
 }), (req: express.Request, res: express.Response, next: express.NextFunction): express.Response<any> | null => {
   const request: WebsocketRequest = req.body
-  const client = getClientByClientID(clients, req.query.client_id)
+  const client = getClientByClientID(clients, req.query.client_id) || getClientByClientID(clients, req.body.client_id)
 
   if (!client || !client.ws) {
     return res.status(400).json({
@@ -145,7 +146,6 @@ const waitResponse = (client: WebsocketClient) => {
   return new Promise<WebsocketReturnRequest | null>((resolve, reject) => {
     const time = Date.now()
     const interval = setInterval(() => {
-      console.log(time - Date.now())
       if (Date.now() - time >= 1000) {
         clearInterval(interval)
         return reject(new Error('Reponse timeout'))
