@@ -4,6 +4,7 @@ import 'source-map-support/register'
 import { v4 as uuidv4 } from 'uuid'
 
 interface WebsocketRequest {
+  uuid: string
   method: 'get' | 'GET' | 'delete' | 'DELETE' | 'head' | 'HEAD' | 'options' | 'OPTIONS' | 'post' | 'POST' | 'put' | 'PUT' | 'patch' | 'PATCH'
   url: string
   headers: object | string
@@ -11,6 +12,7 @@ interface WebsocketRequest {
 }
 
 interface WebsocketReturnRequest {
+  uuid: string | undefined
   status: number
   data: object
 }
@@ -60,8 +62,14 @@ const connectWebsocket = ():void => {
       console.log(e)
     }
 
-    if (!request || !request.method || !request.url) {
-      return
+    if (!request || !request.method || !request.url || !request.uuid) {
+      return sendReturnData(ws, {
+        uuid: request?.uuid,
+        status: 400,
+        data: {
+          message: 'request data error'
+        }
+      })
     }
 
     const result = await axios({
@@ -71,6 +79,7 @@ const connectWebsocket = ():void => {
       headers: request.headers
     }).catch((err) => {
       const returnData: WebsocketReturnRequest = {
+        uuid: request?.uuid,
         status: err.response.status,
         data: err.response.data
       }
@@ -80,6 +89,7 @@ const connectWebsocket = ():void => {
 
     if (result) {
       const returnData: WebsocketReturnRequest = {
+        uuid: request.uuid,
         status: result?.status,
         data: result?.data
       }

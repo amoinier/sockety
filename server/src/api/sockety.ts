@@ -1,6 +1,7 @@
 import express from 'express'
 import WebSocket from 'ws'
 import { celebrate, Joi, Segments } from 'celebrate'
+import { v4 as uuidv4 } from 'uuid'
 
 const Router = express.Router()
 
@@ -12,21 +13,23 @@ interface WebsocketRequest {
 }
 
 interface WebsocketReturnRequest {
+  uuid: string
   status: number
   data: object | string
 }
 
-interface WebsocketClient {
-  ws: WebSocket
-  req: any
-  clientID: string
-  isAlive: boolean
-  interval?: NodeJS.Timeout
-  message?: WebsocketReturnRequest | undefined
-}
-
 interface ClientIDObject {
   clientID: string
+}
+
+interface WebsocketClient extends ClientIDObject {
+  ws: WebSocket
+  req: any
+  isAlive: boolean
+  interval?: NodeJS.Timeout
+  message: {
+    [messageID: string]: object
+  }
 }
 
 const wss = new WebSocket.Server({ port: parseInt(process.env.WEBSOCKET_PORT || '8000') })
@@ -37,7 +40,8 @@ wss.on('connection', (ws: WebSocket, req) => {
     ws: ws,
     req: req,
     clientID: '',
-    isAlive: true
+    isAlive: true,
+    message: {}
   }
 
   client.ws.on('message', (message) => {
@@ -75,7 +79,12 @@ wss.on('connection', (ws: WebSocket, req) => {
         console.log(`Connexion websocket from ${client.clientID} has been closed`)
       })
     }
-    client.message = (wsMessage as WebsocketReturnRequest)
+    if ((wsMessage as WebsocketReturnRequest).uuid) {
+      client.message[(wsMessage as WebsocketReturnRequest).uuid] = {
+        status: (wsMessage as WebsocketReturnRequest).status,
+        data: (wsMessage as WebsocketReturnRequest).data
+      }
+    }
   })
 })
 
@@ -93,6 +102,7 @@ Router.post('/', celebrate({
 }), (req: express.Request, res: express.Response, next: express.NextFunction): express.Response<any> | null => {
   const request: WebsocketRequest = req.body
   const client = getClientByClientID(clients, req.query.client_id) || getClientByClientID(clients, req.body.client_id)
+  const messageID: string = uuidv4()
 
   if (!client || !client.ws) {
     return res.status(400).json({
@@ -103,6 +113,7 @@ Router.post('/', celebrate({
   let stringifyRequest: string = ''
   try {
     stringifyRequest = JSON.stringify({
+      uuid: messageID,
       method: request.method,
       url: request.url,
       header: JSON.stringify(request.headers),
@@ -123,7 +134,7 @@ Router.post('/', celebrate({
 
     const remoteAddress: string = client.req.connection.remoteAddress.replace(/::ffff:/gm, '')
 
-    const message = await waitResponse(client).catch((err) => {
+    const message = await waitResponse(client, messageID).catch((err) => {
       console.error(err)
       res.status(200).json({
         message: `data sent to ${remoteAddress}`
@@ -131,10 +142,13 @@ Router.post('/', celebrate({
     })
 
     if (message) {
-      client.message = undefined
+      delete client.message[messageID]
       return res.status(200).json({
         message: `data sent to ${remoteAddress}`,
-        request: message
+        request: {
+          messageID: messageID,
+          message
+        }
       })
     }
   })
@@ -142,20 +156,20 @@ Router.post('/', celebrate({
   return null
 })
 
-const waitResponse = (client: WebsocketClient) => {
-  return new Promise<WebsocketReturnRequest | null>((resolve, reject) => {
+const waitResponse = (client: WebsocketClient, messageID: string) => {
+  return new Promise<object | null>((resolve, reject) => {
     const time = Date.now()
     const interval = setInterval(() => {
       if (Date.now() - time >= 1000) {
         clearInterval(interval)
         return reject(new Error('Reponse timeout'))
       }
-      if (!client.message) {
+      if (!client?.message[messageID]) {
         return
       }
 
       clearInterval(interval)
-      return resolve(client.message)
+      return resolve(client.message[messageID])
     }, 10)
   })
 }
