@@ -28,7 +28,7 @@ Router.post('/', celebrate({
 }), (req: express.Request, res: express.Response, next: express.NextFunction): express.Response<any> | null => {
   const request: WSRequest = req.body
   const client = WSConnexion.getInstance().getClientByClientID(req.query.client_id) || WSConnexion.getInstance().getClientByClientID(req.body.client_id)
-  const messageID: string = uuidv4()
+  const messageID = uuidv4()
 
   console.log(request)
 
@@ -38,7 +38,7 @@ Router.post('/', celebrate({
     })
   }
 
-  let stringifyRequest: string = ''
+  let stringifyRequest: string
   try {
     stringifyRequest = JSON.stringify({
       uuid: messageID,
@@ -52,7 +52,7 @@ Router.post('/', celebrate({
     return res.status(500).json({ error: err })
   }
 
-  const encodedRequest: string = Buffer.alloc(stringifyRequest.length, stringifyRequest).toString('base64')
+  const encodedRequest = Buffer.alloc(stringifyRequest.length, stringifyRequest).toString('base64')
 
   client.sendMessage(encodedRequest, messageID).then(result => {
     if (result.err) {
@@ -62,7 +62,7 @@ Router.post('/', celebrate({
       message: result.message,
       request: result.request
     })
-  }).catch((err) => {
+  }).catch((err: Error) => {
     return res.status(500).json({ error: err })
   })
 
