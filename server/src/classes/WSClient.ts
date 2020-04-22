@@ -15,6 +15,12 @@ interface WSClientInterface {
   }
 }
 
+interface ReturnResponse {
+  message: string
+  request?: object
+  err?: Error
+}
+
 interface WebsocketReturnRequest {
   uuid: string
   status: number
@@ -119,7 +125,7 @@ class WSClient implements WSClientInterface {
   }
 
   sendMessage (encodedRequest: string, messageID: string) {
-    return new Promise<{message: string, request?: object, err?: Error}>((resolve, reject) => {
+    return new Promise<ReturnResponse>((resolve, reject) => {
       this.ws.send(encodedRequest, async (err: Error | undefined) => {
         if (err) {
           return reject(err)

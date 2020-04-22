@@ -27,7 +27,8 @@ Router.post('/', celebrate({
   })
 }), (req: express.Request, res: express.Response, next: express.NextFunction): express.Response<any> | null => {
   const request: WSRequest = req.body
-  const client = WSConnexion.getInstance().getClientByClientID(req.query.client_id) || WSConnexion.getInstance().getClientByClientID(req.body.client_id)
+  const clientID: string = req.body.client_id || req.query.client_id
+  const client = WSConnexion.getInstance().getClientByClientID(clientID)
   const messageID = uuidv4()
 
   console.log(request)

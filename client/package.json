@@ -21,7 +21,6 @@
   },
   "homepage": "https://github.com/amoinier/sockety#readme",
   "devDependencies": {
-    "@types/axios": "^0.14.0",
     "@types/cors": "^2.8.6",
     "@types/express": "^4.17.3",
     "@types/node": "^13.7.7",
