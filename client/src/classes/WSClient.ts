@@ -20,6 +20,12 @@ interface WebsocketReturnRequest {
   data: object
 }
 
+interface AxiosResponse {
+  status: number
+  data: object
+
+}
+
 class WSClient {
   private static instance: WSClient
   ws?: WebSocket
@@ -32,120 +38,172 @@ class WSClient {
     return WSClient.instance
   }
 
-  setWebsocket (ip: string, port: number) {
+  setWebsocket (ip: string, port: number): void {
     this.ws = new WebSocket(`ws://${ip}:${port}`)
   }
 
-  init () {
+  init (): void {
     const clientID = process.env.WEBSOCKET_CLIENTID || uuidv4().toString()
 
-    return new Promise<Boolean>((resolve) => {
-      if (this.ws) {
-        this.ws.on('open', () => {
-          console.log(`websocket connected! Use ${clientID} as query param (ex: ?client_id=${clientID})`)
+    this.eventOpen(clientID)
+    this.eventError()
 
-          this.sendData({
-            clientID: clientID
-          })
+    if (!this.ws) {
+      return
+    }
+
+    this.ws.on('message', async (data) => {
+      const request = await this.convertMessage(data).catch((err: Error) => {
+        console.error(err)
+
+        this.sendData({
+          uuid: '',
+          status: 400,
+          data: {
+            message: 'request data error'
+          }
+        }).catch((err) => {
+          console.error(err)
         })
+      })
 
-        this.ws.on('error', (err: Error) => {
-          if (err.message.includes('ECONNREFUSED')) {
-            console.error('server closed')
-          }
+      if (!request) {
+        return
+      }
+
+      const response = await axios({
+        url: request.url,
+        method: request.method,
+        data: request.body,
+        headers: request.headers
+      }).catch((err: { response: AxiosResponse}) => {
+        const returnData: WebsocketReturnRequest = {
+          uuid: request?.uuid,
+          status: err.response?.status || 404,
+          data: err.response?.data || ''
+        }
+
+        this.sendData(returnData).catch((err) => {
+          console.error(err)
         })
+      })
 
-        this.ws.on('message', async (data: string) => {
-          let request: WebsocketRequest
+      if (response) {
+        const returnData: WebsocketReturnRequest = {
+          uuid: request?.uuid,
+          status: response?.status,
+          data: response?.data
+        }
 
-          try {
-            const str = Buffer.from(data.toString(), 'base64').toString()
-            request = JSON.parse(str)
-            if (request !== null) {
-              if (request.headers) {
-                request.headers = JSON.parse(request.headers as string)
-              }
-              if (request.body) {
-                request.body = JSON.parse(request.body as string)
-              }
-            }
-          } catch (e) {
-            request = {
-              uuid: '',
-              method: undefined,
-              url: '',
-              headers: {},
-              body: {}
-            }
-            console.log(e)
-          }
-
-          if (!request || !request.method || !request.url || !request.uuid) {
-            this.sendData({
-              uuid: request?.uuid,
-              status: 400,
-              data: {
-                message: 'request data error'
-              }
-            })
-          }
-
-          const result = await axios({
-            url: request.url,
-            method: request.method,
-            data: request.body,
-            headers: request.headers
-          }).catch((err: {response: WebsocketReturnRequest}) => {
-            const returnData: WebsocketReturnRequest = {
-              uuid: request?.uuid,
-              status: err.response.status,
-              data: err.response.data
-            }
-
-            this.sendData(returnData)
-          })
-
-          if (result) {
-            const returnData: WebsocketReturnRequest = {
-              uuid: request?.uuid,
-              status: (result as WebsocketReturnRequest)?.status,
-              data: (result as WebsocketReturnRequest)?.data
-            }
-
-            this.sendData(returnData)
-          }
-        })
-
-        this.ws.on('close', () => {
-          setTimeout(() => {
-            return resolve(true)
-          }, 2000)
+        this.sendData(returnData).catch((err) => {
+          console.error(err)
         })
       }
     })
   }
 
-  sendData (data: WebsocketReturnRequest | ClientIDObject) {
+  eventOpen (clientID: string): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      if (!this.ws) {
+        return reject(new Error('ws not initialized'))
+      }
+
+      this.ws.on('open', () => {
+        console.log(`websocket connected! Use ${clientID} as query param (ex: ?client_id=${clientID})`)
+
+        this.sendData({
+          clientID: clientID
+        }).catch((err: Error) => {
+          if (err) {
+            console.error(err)
+          }
+
+          if (this.ws) {
+            this.ws.close()
+          }
+        })
+      })
+    })
+  }
+
+  eventError (): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      if (!this.ws) {
+        return reject(new Error('ws not initialized'))
+      }
+
+      this.ws.on('error', (err) => {
+        if (err.message.includes('ECONNREFUSED')) {
+          console.error('server closed')
+        }
+      })
+    })
+  }
+
+  eventClose (): Promise<Boolean> {
     return new Promise<Boolean>((resolve, reject) => {
-      let stringifyReturnData: string = ''
+      if (!this.ws) {
+        return reject(new Error('ws not initialized'))
+      }
+
+      this.ws.on('close', () => {
+        setTimeout(() => {
+          return resolve(true)
+        }, 2000)
+      })
+    })
+  }
+
+  convertMessage (data: WebSocket.Data): Promise<WebsocketRequest> {
+    return new Promise<WebsocketRequest>((resolve, reject) => {
+      let request: WebsocketRequest
+
+      try {
+        const str = Buffer.from(data.toString(), 'base64').toString()
+        request = JSON.parse(str)
+        if (request === null) {
+          throw new Error('request is undefined')
+        }
+
+        if (request.headers) {
+          request.headers = JSON.parse(request.headers as string)
+        }
+        if (request.body) {
+          request.body = JSON.parse(request.body as string)
+        }
+
+        return resolve(request)
+      } catch (err) {
+        console.error(err)
+
+        return reject(err)
+      }
+    })
+  }
+
+  sendData (data: WebsocketReturnRequest | ClientIDObject): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      let stringifyReturnData: string
+
       try {
         stringifyReturnData = JSON.stringify(data)
       } catch (err) {
+        console.error(err)
         return reject(err)
       }
 
-      const encodedreturnData: string = Buffer.alloc(stringifyReturnData.length, stringifyReturnData).toString('base64')
+      const encodedreturnData = Buffer.alloc(stringifyReturnData.length, stringifyReturnData).toString('base64')
       if (!this.ws) {
         return reject(new Error('ws not initialized'))
       }
 
       this.ws.send(encodedreturnData, (err) => {
         if (err) {
-          console.log(err)
+          console.error(err)
           return reject(err)
         }
 
-        return resolve(false)
+        return resolve()
       })
     })
   }
