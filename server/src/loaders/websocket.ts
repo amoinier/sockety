@@ -1,5 +1,5 @@
-import WSConnexion from '../classes/WSConnexion'
+import WSConnexion from '../classes/WSConnexion';
 
 export default async () => {
-  WSConnexion.getInstance().create()
-}
+  WSConnexion.getInstance().create();
+};
