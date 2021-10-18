@@ -168,7 +168,7 @@ const decodeString = (
   }
 
   try {
-    return JSON.parse(Buffer.from(message.toString('base64'), 'base64').toString());
+    return JSON.parse(Buffer.from(message.toString(), 'base64').toString());
   } catch (e) {
     console.error(e);
     return null;

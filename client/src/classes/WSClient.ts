@@ -25,19 +25,19 @@ interface WebsocketRequest {
     | 'PATCH'
     | undefined;
   url: string;
-  headers: object | string;
-  body: object | string;
+  headers: Record<string, string>;
+  body: Record<string, unknown> | string;
 }
 
 interface WebsocketReturnRequest {
   uuid?: string;
   status: number;
-  data: object;
+  data: unknown;
 }
 
 interface AxiosResponse {
   status: number;
-  data: object;
+  data: unknown;
 }
 
 class WSClient {
@@ -181,8 +181,11 @@ class WSClient {
           throw new Error('request is undefined');
         }
 
+        console.log(request.headers);
+        console.log(request.body);
+
         if (request.headers) {
-          request.headers = JSON.parse(request.headers as string);
+          request.headers = JSON.parse(request.headers as any);
         }
         if (request.body) {
           request.body = JSON.parse(request.body as string);
