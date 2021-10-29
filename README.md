@@ -5,6 +5,8 @@ One app in your personnal network (client), one app where you want (server).
 
 ## Features
 
+Because of usage of websocket, response body is limited to 1400 characters.
+
 - Multiple client split by client ID.
 - Return HTTP response from client if it respond under 1 sec.
 - Ping client every 30 sec.

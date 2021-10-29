@@ -3,7 +3,7 @@ import 'source-map-support/register';
 
 import loaders from './loaders';
 
-const startServer = async () => {
+async function startServer() {
   const app = express();
 
   loaders({ expressApp: app });
@@ -11,6 +11,6 @@ const startServer = async () => {
   app.listen(process.env.HTTP_PORT || 3000, (): void => {
     console.log(`listening on ${process.env.HTTP_PORT || 3000}`);
   });
-};
+}
 
 startServer();

@@ -1,6 +1,8 @@
 import WebSocket from 'ws';
-import axios from 'axios';
+import axios, { AxiosRequestHeaders, Method } from 'axios';
 import { v4 as uuidv4 } from 'uuid';
+
+const MAX_WEBSOCKET_SIZE = 1400;
 
 interface ClientIDObject {
   clientID: string;
@@ -8,31 +10,10 @@ interface ClientIDObject {
 
 interface WebsocketRequest {
   uuid: string;
-  method:
-    | 'get'
-    | 'GET'
-    | 'delete'
-    | 'DELETE'
-    | 'head'
-    | 'HEAD'
-    | 'options'
-    | 'OPTIONS'
-    | 'post'
-    | 'POST'
-    | 'put'
-    | 'PUT'
-    | 'patch'
-    | 'PATCH'
-    | undefined;
+  method: Method;
   url: string;
-  headers: Record<string, string>;
+  headers: AxiosRequestHeaders;
   body: Record<string, unknown> | string;
-}
-
-interface WebsocketReturnRequest {
-  uuid?: string;
-  status: number;
-  data: unknown;
 }
 
 interface AxiosResponse {
@@ -40,11 +21,19 @@ interface AxiosResponse {
   data: unknown;
 }
 
+type WebsocketReturnRequest =
+  | {
+      uuid: string;
+      status: number;
+      data: unknown;
+    }
+  | ClientIDObject;
+
 class WSClient {
   private static instance: WSClient;
   ws?: WebSocket;
 
-  static getInstance(): WSClient {
+  static getInstance() {
     if (!WSClient.instance) {
       WSClient.instance = new WSClient();
     }
@@ -52,12 +41,12 @@ class WSClient {
     return WSClient.instance;
   }
 
-  setWebsocket(ip: string, port: number): void {
+  setWebsocket(ip: string, port: number) {
     this.ws = new WebSocket(`ws://${ip}:${port}`);
   }
 
-  init(): void {
-    const clientID = process.env.WEBSOCKET_CLIENTID || uuidv4().toString();
+  init() {
+    const clientID = process.env.WEBSOCKET_CLIENTID || uuidv4();
 
     this.eventOpen(clientID);
     this.eventError();
@@ -91,7 +80,7 @@ class WSClient {
         data: request.body,
         headers: request.headers,
       }).catch((err: { response: AxiosResponse }) => {
-        const returnData: WebsocketReturnRequest = {
+        const returnData = {
           uuid: request?.uuid,
           status: err.response?.status || 404,
           data: err.response?.data || '',
@@ -103,7 +92,7 @@ class WSClient {
       });
 
       if (response) {
-        const returnData: WebsocketReturnRequest = {
+        const returnData = {
           uuid: request?.uuid,
           status: response?.status,
           data: response?.data,
@@ -116,48 +105,44 @@ class WSClient {
     });
   }
 
-  eventOpen(clientID: string): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      if (!this.ws) {
-        return reject(new Error('ws not initialized'));
-      }
+  eventOpen(clientID: string) {
+    if (!this.ws) {
+      throw new Error('ws not initialized');
+    }
 
-      this.ws.on('open', () => {
-        console.log(
-          `websocket connected! Use ${clientID} as query param (ex: ?client_id=${clientID})`,
-        );
+    this.ws.on('open', () => {
+      console.log(
+        `websocket connected! Use ${clientID} as query param (ex: ?client_id=${clientID})`,
+      );
 
-        this.sendData({
-          clientID: clientID,
-        }).catch((err: Error) => {
-          if (err) {
-            console.error(err);
-          }
+      this.sendData({
+        clientID: clientID,
+      }).catch((err: Error) => {
+        if (err) {
+          console.error(err);
+        }
 
-          if (this.ws) {
-            this.ws.close();
-          }
-        });
-      });
-    });
-  }
-
-  eventError(): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      if (!this.ws) {
-        return reject(new Error('ws not initialized'));
-      }
-
-      this.ws.on('error', err => {
-        if (err.message.includes('ECONNREFUSED')) {
-          console.error('server closed');
+        if (this.ws) {
+          this.ws.close();
         }
       });
     });
   }
 
-  eventClose(): Promise<Boolean> {
-    return new Promise<Boolean>((resolve, reject) => {
+  eventError() {
+    if (!this.ws) {
+      throw new Error('ws not initialized');
+    }
+
+    this.ws.on('error', err => {
+      if (err.message.includes('ECONNREFUSED')) {
+        console.error('server closed');
+      }
+    });
+  }
+
+  eventClose() {
+    return new Promise<boolean>((resolve, reject) => {
       if (!this.ws) {
         return reject(new Error('ws not initialized'));
       }
@@ -170,63 +155,59 @@ class WSClient {
     });
   }
 
-  convertMessage(data: WebSocket.Data): Promise<WebsocketRequest> {
-    return new Promise<WebsocketRequest>((resolve, reject) => {
-      let request: WebsocketRequest;
-
-      try {
-        const str = Buffer.from(data.toString(), 'base64').toString();
-        request = JSON.parse(str);
-        if (request === null) {
-          throw new Error('request is undefined');
-        }
-
-        console.log(request.headers);
-        console.log(request.body);
-
-        if (request.headers) {
-          request.headers = JSON.parse(request.headers as any);
-        }
-        if (request.body) {
-          request.body = JSON.parse(request.body as string);
-        }
-
-        return resolve(request);
-      } catch (err) {
-        console.error(err);
-
-        return reject(err);
+  async convertMessage(data: WebSocket.Data) {
+    try {
+      const str = Buffer.from(data.toString(), 'base64').toString();
+      const rowRequest = JSON.parse(str);
+      if (rowRequest === null) {
+        throw new Error('request is undefined');
       }
-    });
+
+      const request: WebsocketRequest = {
+        uuid: rowRequest.uuid,
+        method: rowRequest.method,
+        url: rowRequest.url,
+        headers: rowRequest.headers ? JSON.parse(rowRequest.headers) : undefined,
+        body: rowRequest.body ? JSON.parse(rowRequest.body) : undefined,
+      };
+
+      return request;
+    } catch (err) {
+      console.error(err);
+
+      throw err;
+    }
   }
 
-  sendData(data: WebsocketReturnRequest | ClientIDObject): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      let stringifyReturnData: string;
+  async sendData(data: WebsocketReturnRequest) {
+    let stringifyReturnData: string;
 
-      try {
-        stringifyReturnData = JSON.stringify(data);
-      } catch (err) {
+    if ('data' in data && typeof data.data === 'string') {
+      data.data = data.data.substring(0, MAX_WEBSOCKET_SIZE);
+    }
+
+    try {
+      stringifyReturnData = JSON.stringify(data);
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+
+    const encodedreturnData = Buffer.alloc(
+      stringifyReturnData.length,
+      stringifyReturnData,
+    ).toString('base64');
+    if (!this.ws) {
+      throw new Error('ws not initialized');
+    }
+
+    this.ws.send(encodedreturnData, err => {
+      if (err) {
         console.error(err);
-        return reject(err);
+        throw err;
       }
 
-      const encodedreturnData = Buffer.alloc(
-        stringifyReturnData.length,
-        stringifyReturnData,
-      ).toString('base64');
-      if (!this.ws) {
-        return reject(new Error('ws not initialized'));
-      }
-
-      this.ws.send(encodedreturnData, err => {
-        if (err) {
-          console.error(err);
-          return reject(err);
-        }
-
-        return resolve();
-      });
+      return;
     });
   }
 }

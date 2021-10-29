@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
-import express from 'express';
+import { Method, AxiosRequestHeaders } from 'axios';
+import express, { Request, Response, NextFunction } from 'express';
 import { celebrate, Joi, Segments } from 'celebrate';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -8,25 +9,27 @@ import WSConnexion from '../classes/WSConnexion';
 const Router = express.Router();
 
 interface WSRequest {
-  method:
-    | 'get'
-    | 'GET'
-    | 'delete'
-    | 'DELETE'
-    | 'head'
-    | 'HEAD'
-    | 'options'
-    | 'OPTIONS'
-    | 'post'
-    | 'POST'
-    | 'put'
-    | 'PUT'
-    | 'patch'
-    | 'PATCH';
+  client_id?: string;
+  method: Method;
   url: string;
-  headers: object;
-  body: object;
+  headers: AxiosRequestHeaders;
+  body: {
+    [key: string]: unknown;
+  };
 }
+
+interface RouterQuery {
+  client_id: string;
+}
+
+type RouterResponse =
+  | {
+      message: string;
+      request?: Record<string, unknown>;
+    }
+  | {
+      error: Error | unknown;
+    };
 
 Router.post(
   '/',
@@ -62,16 +65,14 @@ Router.post(
     }),
   }),
   (
-    req: express.Request,
-    res: express.Response,
-    next: express.NextFunction,
-  ): express.Response<any> | null => {
-    const request: WSRequest = req.body;
-    const clientID: string = req.body.client_id || req.query.client_id;
+    req: Request<any, any, WSRequest, RouterQuery>,
+    res: Response<RouterResponse>,
+    _: NextFunction,
+  ) => {
+    const request = req.body;
+    const clientID = request.client_id || req.query.client_id || '';
     const client = WSConnexion.getInstance().getClientByClientID(clientID);
     const messageID = uuidv4();
-
-    console.log(request);
 
     if (!client || !client.ws) {
       return res.status(400).json({
@@ -79,40 +80,40 @@ Router.post(
       });
     }
 
-    let stringifyRequest: string;
     try {
-      stringifyRequest = JSON.stringify({
+      const stringifyRequest = JSON.stringify({
         uuid: messageID,
         method: request.method,
         url: request.url,
         header: JSON.stringify(request.headers),
         body: JSON.stringify(request.body),
       });
+
+      const encodedRequest = Buffer.alloc(stringifyRequest.length, stringifyRequest).toString(
+        'base64',
+      );
+
+      client
+        .sendMessage(encodedRequest, messageID)
+        .then(result => {
+          if (result.err) {
+            console.log(result.err);
+          }
+          return res.status(200).json({
+            message: result.message,
+            request: result.request,
+          });
+        })
+        .catch((err: Error) => {
+          return res.status(500).json({ error: err });
+        });
+
+      return null;
     } catch (err) {
       console.error(err);
+
       return res.status(500).json({ error: err });
     }
-
-    const encodedRequest = Buffer.alloc(stringifyRequest.length, stringifyRequest).toString(
-      'base64',
-    );
-
-    client
-      .sendMessage(encodedRequest, messageID)
-      .then(result => {
-        if (result.err) {
-          console.log(result.err);
-        }
-        return res.status(200).json({
-          message: result.message,
-          request: result.request,
-        });
-      })
-      .catch((err: Error) => {
-        return res.status(500).json({ error: err });
-      });
-
-    return null;
   },
 );
 
