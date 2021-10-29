@@ -11,13 +11,13 @@ interface WSClientInterface {
   isAlive: boolean;
   interval?: NodeJS.Timeout;
   message: {
-    [messageID: string]: object;
+    [messageID: string]: Record<string, unknown>;
   };
 }
 
 interface ReturnResponse {
   message: string;
-  request?: object;
+  request?: Record<string, unknown>;
   err?: Error;
 }
 
@@ -38,7 +38,7 @@ class WSClient implements WSClientInterface {
   isAlive: boolean;
   interval?: NodeJS.Timeout;
   message: {
-    [messageID: string]: object;
+    [messageID: string]: Record<string, unknown>;
   };
 
   constructor(ws: WebSocket, req: IncomingMessage) {
@@ -57,17 +57,17 @@ class WSClient implements WSClientInterface {
         console.error('wsMessage is null');
         return this.ws.terminate();
       }
-      if ((wsMessage as ClientIDObject).clientID) {
+      if ('clientID' in wsMessage && wsMessage.clientID) {
         this.init(wsMessage);
       }
-      if ((wsMessage as WebsocketReturnRequest).uuid) {
-        this.newMessage(wsMessage as WebsocketReturnRequest);
+      if ('uuid' in wsMessage && wsMessage.uuid) {
+        this.newMessage(wsMessage);
       }
     });
   }
 
-  init(wsMessage: ClientIDObject | WebsocketReturnRequest | null) {
-    this.clientID = (wsMessage as ClientIDObject).clientID;
+  init(wsMessage: ClientIDObject) {
+    this.clientID = wsMessage.clientID;
     WSConnexion.getInstance().addClient(this);
 
     this.interval = setInterval(() => {
@@ -99,8 +99,8 @@ class WSClient implements WSClientInterface {
     console.log(`Connexion websocket from ${this.clientID} has been closed`);
   }
 
-  waitResponse = (messageID: string) => {
-    return new Promise<object | null>((resolve, reject) => {
+  waitResponse(messageID: string) {
+    return new Promise<Record<string, unknown> | null>((resolve, reject) => {
       const time = Date.now();
       const interval = setInterval(() => {
         if (Date.now() - time >= 1000) {
@@ -108,14 +108,14 @@ class WSClient implements WSClientInterface {
           return reject(new Error('Reponse timeout'));
         }
         if (!this?.message[messageID]) {
-          return;
+          return null;
         }
 
         clearInterval(interval);
         return resolve(this.message[messageID]);
       }, 10);
     });
-  };
+  }
 
   newMessage(message: WebsocketReturnRequest) {
     this.message[message.uuid] = {
@@ -160,19 +160,21 @@ class WSClient implements WSClientInterface {
   }
 }
 
-const decodeString = (
-  message: string | WebSocket.Data,
-): ClientIDObject | WebsocketReturnRequest | null => {
+function decodeString(message: WebSocket.Data) {
   if (!message) {
     return null;
   }
 
   try {
-    return JSON.parse(Buffer.from(message.toString(), 'base64').toString());
+    const parsedMessage: ClientIDObject | WebsocketReturnRequest = JSON.parse(
+      Buffer.from(message.toString(), 'base64').toString(),
+    );
+
+    return parsedMessage;
   } catch (e) {
     console.error(e);
     return null;
   }
-};
+}
 
 export default WSClient;

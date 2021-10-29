@@ -13,7 +13,7 @@ class WSConnexion {
     this.clients = [];
   }
 
-  static getInstance(): WSConnexion {
+  static getInstance() {
     if (WSConnexion.instance == null) {
       WSConnexion.instance = new WSConnexion();
     }
@@ -21,8 +21,8 @@ class WSConnexion {
   }
 
   create() {
-    WSConnexion.getInstance().server.on('connection', (ws: WebSocket, req) => {
-      const client: WSClient = new WSClient(ws, req);
+    WSConnexion.getInstance().server.on('connection', (ws, req) => {
+      const client = new WSClient(ws, req);
 
       client.messageEvent();
     });
@@ -33,7 +33,7 @@ class WSConnexion {
   }
 
   deleteClient(toDelete: WSClient) {
-    const index: number = this.clients.findIndex(
+    const index = this.clients.findIndex(
       (client: WSClient) => client.clientID === toDelete.clientID,
     );
     if (index === -1) {
@@ -43,19 +43,9 @@ class WSConnexion {
     this.clients.splice(index, 1);
   }
 
-  getClientByClientID = (clientID: string): WSClient | undefined => {
+  getClientByClientID(clientID: string) {
     return this.clients.find(client => client.clientID === clientID);
-  };
-
-  deleteWebsocketClient = (toDelete: WSClient): void => {
-    const index: number = this.clients.findIndex(
-      (client: WSClient) => client.clientID === toDelete.clientID,
-    );
-    if (index === -1) {
-      return;
-    }
-    this.clients.splice(index, 1);
-  };
+  }
 }
 
 export default WSConnexion;
