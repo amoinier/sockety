@@ -1,6 +1,6 @@
 # Sockety (WIP)
 
-If you want to do HTTP request in your personal network from outside without open port, you can use Sockety ! It provide a websocket connection between 2 apps (written in Typescript).
+If you want to do HTTP request in your personal/local network from outside without open port, you can use Sockety ! It provide a websocket connection between 2 apps (written in Typescript).
 One app in your personnal network (client), one app where you want (server).
 
 ## Features
