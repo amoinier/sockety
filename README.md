@@ -1,7 +1,24 @@
-# Sockety (WIP)
+<p align="center">
+    <h1 align="center">SOCKETY</h1>
+</p>
+<p align="center">
+    <em>Bridging Networks Remotely, One Socket at a Time</em>
+</p>
+<p align="center">
+	<img src="https://img.shields.io/github/license/amoinier/sockety?style=default&logo=opensourceinitiative&logoColor=white&color=0080ff" alt="license">
+	<img src="https://img.shields.io/github/last-commit/amoinier/sockety?style=default&logo=git&logoColor=white&color=0080ff" alt="last-commit">
+	<img src="https://img.shields.io/github/languages/top/amoinier/sockety?style=default&color=0080ff" alt="repo-top-language">
+	<img src="https://img.shields.io/github/languages/count/amoinier/sockety?style=default&color=0080ff" alt="repo-language-count">
+</p>
+<p align="center">
+	<!-- default option, no dependency badges. -->
+</p>
 
-If you want to do HTTP request in your personal/local network from outside without open port, you can use Sockety ! It provide a websocket connection between 2 apps (written in Typescript).
-One app in your personnal network (client), one app where you want (server).
+<br>
+
+## Overview
+
+Sockety is an advanced open-source project that sets up a robust client-server model using websockets for real-time communication, primarily facilitating remote access to personal networks. Implemented in TypeScript and containerized using Docker, the software ensures streamlined deployment and extensive interoperability. The server side handles socket creation, event management, and client communication, while the client-side takes care of user interaction and data transmission. With added features such as error feedback, connection health monitoring, and automatic reconnection, Sockety significantly enhances the efficiency and reliability of client-server communication in real-time applications.
 
 ## Features
 
