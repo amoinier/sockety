@@ -19,7 +19,7 @@ interface WSRequest {
 }
 
 interface RouterQuery {
-  client_id: string;
+  client_id?: string;
 }
 
 type RouterResponse =
